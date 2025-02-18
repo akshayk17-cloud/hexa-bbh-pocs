@@ -279,3 +279,35 @@ ORDER BY
 
 
 Hi, this is the hibernate query & the output query generated. How to rewrite this code to generate query with pagination logic with the inner query, & remove the outer select query with pagination logic?
+
+updated setorder
+
+private void setOrder(Root<TSO400_ORD_MSTR> root, CriteriaQuery<TSO400ResponseVo> query, CriteriaBuilder cb, FilterRequestVO requestVO) {
+    if (requestVO.getPaginationDetails() == null || CollectionUtils.isEmpty(requestVO.getPaginationDetails().getSortModel())) {
+        requestVO.getPaginationDetails().setSortModel(
+            Arrays.asList(new SortModel(TSO400_ORD_MSTR_FilterEnum.CRT_TSP.getName(), "desc"))
+        );
+    }
+
+    List<Order> orderList = new ArrayList<>();
+
+    for (SortModel sortModel : requestVO.getPaginationDetails().getSortModel()) {
+        TSO400_ORD_MSTR_FilterEnum sortByFilterEnum = TSO400_ORD_MSTR_FilterEnum.getByName(
+            sortModel.getColId().contains("_") ?
+            GridSortFilterMapper.ttsoSummaryGridColumnMapper.get(sortModel.getColId()) :
+            sortModel.getColId()
+        );
+
+        sortByFilterEnum = sortByFilterEnum == null ? TSO400_ORD_MSTR_FilterEnum.CRT_TSP : sortByFilterEnum;
+        Expression<?> sortBy = getExpression(root, cb, sortByFilterEnum);
+
+        if (sortBy != null) {
+            Order orderBy = isOrderAsc(sortModel.getSort()) ? cb.asc(sortBy) : cb.desc(sortBy);
+            orderList.add(orderBy);
+        }
+    }
+
+    if (!orderList.isEmpty()) {
+        query.orderBy(orderList);
+    }
+}
