@@ -61,6 +61,27 @@ public Page<TSO400ResponseVo> search(FilterRequestVO requestVO) throws Exception
 		//Pageable pageable = PageRequest.of(0, 5, Sort.by(direction, sortBy));
        // return new PageImpl<>(users, pageable, totalRecords);
 	}
+
+private void setOrder(Root<TSO400_ORD_MSTR> root, CriteriaQuery<TSO400ResponseVo> query, CriteriaBuilder cb,
+			FilterRequestVO requestVO) {
+		if (requestVO.getPaginationDetails() == null
+				|| CollectionUtils.isEmpty(requestVO.getPaginationDetails().getSortModel())) {
+			requestVO.getPaginationDetails()
+					.setSortModel(Arrays.asList(new SortModel(TSO400_ORD_MSTR_FilterEnum.CRT_TSP.getName(), "desc")));
+		}
+		for (SortModel sortModel : requestVO.getPaginationDetails().getSortModel()) {
+			TSO400_ORD_MSTR_FilterEnum sortByFilterEnum = TSO400_ORD_MSTR_FilterEnum
+					.getByName(sortModel.getColId().contains("_")
+							? GridSortFilterMapper.ttsoSummaryGridColumnMapper.get(sortModel.getColId())
+							: sortModel.getColId());
+			sortByFilterEnum = sortByFilterEnum == null ? TSO400_ORD_MSTR_FilterEnum.CRT_TSP : sortByFilterEnum;
+			Expression<?> sortBy = getExpression(root, cb, sortByFilterEnum);
+			if (sortBy != null) {
+				Order orderBy = isOrderAsc(sortModel.getSort()) ? cb.asc(sortBy) : cb.desc(sortBy);
+				query.orderBy(orderBy);
+			}
+		}
+	}
 	
 	
 	
