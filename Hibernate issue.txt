@@ -1,0 +1,260 @@
+public Page<TSO400ResponseVo> search(FilterRequestVO requestVO) throws Exception {
+		CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+		CriteriaQuery<TSO400ResponseVo> query = criteriaBuilder.createQuery(TSO400ResponseVo.class);
+		Root<TSO400_ORD_MSTR> root = query.from(TSO400_ORD_MSTR.class);
+		query.multiselect(root.get(TSO400_ORD_MSTR_.tso400_ORD_MSTRId),
+				root.get(TSO400_ORD_MSTR_.BBH_SECR_NUM),
+				root.get(TSO400_ORD_MSTR_.AM307_PRFX_CDE), 
+				root.get(TSO400_ORD_MSTR_.AM307_ACCT_NUM),
+				root.get(TSO400_ORD_MSTR_.AM307_CKDGT_NUM), 
+				root.get(TSO400_ORD_MSTR_.AM307_SFX_CDE),
+				root.get(TSO400_ORD_MSTR_.ORDR_TYP_CDE), 
+				getOrderType(criteriaBuilder, root),
+				root.get(TSO400_ORD_MSTR_.TRD_DTE_NUM),
+				root.get(TSO400_ORD_MSTR_.STLMT_DTE_NUM), 
+				root.get(TSO400_ORD_MSTR_.ORDR_QTY),
+				root.get(TSO400_ORD_MSTR_.ORDR_AMT), 
+				root.get(TSO400_ORD_MSTR_.LST_UPDT_USR_ID),
+				root.get(TSO400_ORD_MSTR_.BRKR_ID),
+				root.get(TSO400_ORD_MSTR_.CLNT_REF6_NUM),
+				root.get(TSO400_ORD_MSTR_.CLNT_REF9_NUM),
+				root.get(TSO400_ORD_MSTR_.CLNT_REF10_NUM),
+				root.get(TSO400_ORD_MSTR_.DTC_RBN_NUM),
+				root.get(TSO400_ORD_MSTR_.CUST_TRN_TYP_CDE),
+				getSubQueryForBalanceRecordOrdrQty(criteriaBuilder, query, root, Tso400RecordType.BASE).getSelection(),
+				getSubQueryForBalanceRecordOrdrAmt(criteriaBuilder, query, root, Tso400RecordType.BASE).getSelection(),
+				getSubQueryForCusipDetailsCusCde(criteriaBuilder, query, root).getSelection(),
+				getSubQueryForCusipDetailsSecrNum(criteriaBuilder, query, root).getSelection(),
+				getSubQueryForAccountDetails(criteriaBuilder, query, root).getSelection(),
+				
+				root.get(TSO400_ORD_MSTR_.DT_GRP_ID), 
+				root.get(TSO400_ORD_MSTR_.DT_GRP_TRD_TYP_CD),
+				root.get(TSO400_ORD_MSTR_.CLR_STLMT_DTE_NUM),
+				root.get(TSO400_ORD_MSTR_.ISO_CNTRY_CDE),
+				root.get(TSO400_ORD_MSTR_.STLMT_CRNCY_CDE),
+				root.get(TSO400_ORD_MSTR_.CLR_LOCN_PRFX_CDE),
+				root.get(TSO400_ORD_MSTR_.CLR_LOCN_ACCT_NUM),
+				root.get(TSO400_ORD_MSTR_.CLR_LOCN_CKDGT_NUM),
+				root.get(TSO400_ORD_MSTR_.CLR_LOCN_SFX_CDE),
+				getSubQueryForLockedBy(criteriaBuilder, query, root)
+				);
+		List<Predicate> predicates = getPredicates(root, criteriaBuilder, query, requestVO.getFiltersOptions());
+		query.where(predicates.toArray(new Predicate[0]));
+		
+		setOrder(root, query, criteriaBuilder, requestVO);
+	//	List<TSO400ResponseVo> list1=entityManager.createQuery(query).getResultList();
+		System.out.println("first row :"+requestVO.getPaginationDetails().getStartRow());
+		System.out.println("last row :"+requestVO.getPaginationDetails().getEndRow());
+		System.out.println("@@@:"+ (requestVO.getPaginationDetails().getEndRow() - requestVO.getPaginationDetails().getStartRow() + ApplicationConstants.CLIENT_REF_DATE_DESC_FILTER) );
+		List<TSO400ResponseVo> list1=entityManager.createQuery(query).setFirstResult(0).setMaxResults(10).getResultList(); 
+		
+		TypedQuery<TSO400ResponseVo> query2 = entityManager.createQuery(query);
+		query2.setFirstResult(0);
+		query2.setMaxResults(5);
+		
+		List<TSO400ResponseVo> resultData = query2.getResultList();
+		
+		Pageable pageable = PageRequest.of(0, 5);
+		Long totalCount = this.searchCount(requestVO);
+		return new PageImpl(resultData, pageable, totalCount);
+		
+		//Pageable pageable = PageRequest.of(0, 5, Sort.by(direction, sortBy));
+       // return new PageImpl<>(users, pageable, totalRecords);
+	}
+	
+	
+	
+	Output Query:-
+	
+	
+	SELECT
+  *
+FROM
+  (
+    SELECT
+      tom1_0.CRT_TSP c0,
+      tom1_0.SON_REF_ID c1,
+      tom1_0.SON_REF_NUM c2,
+      tom1_0.SON_REF_PATH_NUM c3,
+      tom1_0.SON_REF_SEQ_NUM c4,
+      tom1_0.SON_REF_TRN_NUM c5,
+      tom1_0.BBH_SECR_NUM c6,
+      tom1_0.AM307_PRFX_CDE c7,
+      tom1_0.AM307_ACCT_NUM c8,
+      tom1_0.AM307_CKDGT_NUM c9,
+      tom1_0.AM307_SFX_CDE c10,
+      tom1_0.ORDR_TYP_CDE c11,
+      CASE
+        WHEN tom1_0.ORDR_TYP_CDE       =?
+        AND tom1_0.APLIC_ORDR_TYP_CDE IN (?,?)
+        AND tom1_0.PNS_ACCT_TYP_CDE    =?
+        THEN CAST(? AS VARCHAR(32672))
+        WHEN tom1_0.ORDR_TYP_CDE       =?
+        AND tom1_0.APLIC_ORDR_TYP_CDE IN (?,?)
+        AND tom1_0.PNS_ACCT_TYP_CDE   <>?
+        THEN CAST(? AS VARCHAR(32672))
+        WHEN tom1_0.ORDR_TYP_CDE           =?
+        AND tom1_0.APLIC_ORDR_TYP_CDE NOT IN (?,?)
+        AND tom1_0.ORDR_AMT                =?
+        AND tom1_0.AVT_TRN_NUM             =?
+        THEN CAST(? AS VARCHAR(32672))
+        WHEN tom1_0.ORDR_TYP_CDE           =?
+        AND tom1_0.APLIC_ORDR_TYP_CDE NOT IN (?,?)
+        AND tom1_0.ORDR_AMT                =?
+        AND tom1_0.AVT_TRN_NUM            <>?
+        THEN CAST(? AS VARCHAR(32672))
+        WHEN tom1_0.ORDR_TYP_CDE           =?
+        AND tom1_0.APLIC_ORDR_TYP_CDE NOT IN (?,?)
+        AND tom1_0.ORDR_AMT               <>?
+        THEN CAST(? AS VARCHAR(32672))
+        WHEN tom1_0.ORDR_TYP_CDE       =?
+        AND tom1_0.APLIC_ORDR_TYP_CDE IN (?,?)
+        AND tom1_0.PNS_ACCT_TYP_CDE    =?
+        THEN CAST(? AS VARCHAR(32672))
+        WHEN tom1_0.ORDR_TYP_CDE       =?
+        AND tom1_0.APLIC_ORDR_TYP_CDE IN (?,?)
+        AND tom1_0.PNS_ACCT_TYP_CDE   <>?
+        THEN CAST(? AS VARCHAR(32672))
+        WHEN tom1_0.ORDR_TYP_CDE           =?
+        AND tom1_0.APLIC_ORDR_TYP_CDE NOT IN (?,?)
+        AND tom1_0.ORDR_AMT                =?
+        AND tom1_0.AVT_TRN_NUM             =?
+        THEN CAST(? AS VARCHAR(32672))
+        WHEN tom1_0.ORDR_TYP_CDE           =?
+        AND tom1_0.APLIC_ORDR_TYP_CDE NOT IN (?,?)
+        AND tom1_0.ORDR_AMT                =?
+        AND tom1_0.AVT_TRN_NUM            <>?
+        THEN CAST(? AS VARCHAR(32672))
+        WHEN tom1_0.ORDR_TYP_CDE           =?
+        AND tom1_0.APLIC_ORDR_TYP_CDE NOT IN (?,?)
+        AND tom1_0.ORDR_AMT               <>?
+        THEN CAST(? AS VARCHAR(32672))
+        WHEN tom1_0.ORDR_TYP_CDE=?
+        THEN CAST(? AS VARCHAR(32672))
+        WHEN tom1_0.ORDR_TYP_CDE=?
+        THEN CAST(? AS VARCHAR(32672))
+        ELSE tom1_0.ORDR_TYP_CDE
+      END c12,
+      tom1_0.TRD_DTE_NUM c13,
+      tom1_0.STLMT_DTE_NUM c14,
+      tom1_0.ORDR_QTY c15,
+      tom1_0.ORDR_AMT c16,
+      tom1_0.LST_UPDT_USR_ID c17,
+      tom1_0.BRKR_ID c18,
+      tom1_0.CLNT_REF6_NUM c19,
+      tom1_0.CLNT_REF9_NUM c20,
+      tom1_0.CLNT_REF10_NUM c21,
+      tom1_0.DTC_RBN_NUM c22,
+      tom1_0.CUST_TRN_TYP_CDE c23,
+      (
+        SELECT
+          COALESCE(tom2_0.ORDR_QTY,?) c0
+        FROM
+          TSO400_ORD_MSTR tom2_0
+        WHERE
+          tom1_0.LST_PATH_NUM     <>?
+        AND tom1_0.SON_REF_PATH_NUM=?
+        AND tom2_0.SON_REF_ID      =tom1_0.SON_REF_ID
+        AND tom2_0.SON_REF_NUM     =tom1_0.SON_REF_NUM
+        AND tom2_0.SON_REF_TRN_NUM =tom1_0.SON_REF_TRN_NUM
+        AND tom2_0.SON_REF_PATH_NUM=?
+      )
+      c24,
+      (
+        SELECT
+          COALESCE(tom3_0.ORDR_AMT,?) c0
+        FROM
+          TSO400_ORD_MSTR tom3_0
+        WHERE
+          tom1_0.LST_PATH_NUM     <>?
+        AND tom1_0.SON_REF_PATH_NUM=?
+        AND tom3_0.SON_REF_ID      =tom1_0.SON_REF_ID
+        AND tom3_0.SON_REF_NUM     =tom1_0.SON_REF_NUM
+        AND tom3_0.SON_REF_TRN_NUM =tom1_0.SON_REF_TRN_NUM
+        AND tom3_0.SON_REF_PATH_NUM=?
+      )
+      c25,
+      (
+        SELECT DISTINCT
+          COALESCE(ts1_0.SU101_CUSIP_NM_CDE,?) c0
+        FROM
+          TSU107_SECURITY ts1_0
+        WHERE
+          ts1_0.BBH_SECR_NUM=tom1_0.BBH_SECR_NUM
+      )
+      c26,
+      (
+        SELECT DISTINCT
+          COALESCE(ts2_0.short_des,?) c0
+        FROM
+          TSU107_SECURITY ts2_0
+        WHERE
+          ts2_0.BBH_SECR_NUM=tom1_0.BBH_SECR_NUM
+      )
+      c27,
+      (
+        SELECT DISTINCT
+          ta1_0.SHRT_NAM c0
+        FROM
+          TAM307_ACCT ta1_0
+        WHERE
+          ta1_0.ACCT_NUM   =CAST(tom1_0.AM307_ACCT_NUM AS  VARCHAR(32672))
+        AND ta1_0.CKDGT_NUM=CAST(tom1_0.AM307_CKDGT_NUM AS VARCHAR(32672))
+        AND ta1_0.SFX_CDE  =tom1_0.AM307_SFX_CDE
+        AND ta1_0.PRFX_CDE =tom1_0.AM307_PRFX_CDE
+      )
+      c28,
+      tom1_0.DT_GRP_ID c29,
+      tom1_0.DT_GRP_TRD_TYP_CD c30,
+      tom1_0.CLR_STLMT_DTE_NUM c31,
+      tom1_0.ISO_CNTRY_CDE c32,
+      tom1_0.STLMT_CRNCY_CDE c33,
+      tom1_0.CLR_LOCN_PRFX_CDE c34,
+      tom1_0.CLR_LOCN_ACCT_NUM c35,
+      tom1_0.CLR_LOCN_CKDGT_NUM c36,
+      tom1_0.CLR_LOCN_SFX_CDE c37,
+      (
+        SELECT DISTINCT
+          tc1_0.EIB_APLIC_ID c0
+        FROM
+          TSO599_COMMAREA tc1_0
+        WHERE
+          CAST(tom1_0.SON_REF_ID
+          ||tom1_0.SON_REF_NUM
+          ||tom1_0.SON_REF_TRN_NUM
+          ||tom1_0.SON_REF_PATH_NUM
+          ||tom1_0.SON_REF_SEQ_NUM AS VARCHAR(32672))=tc1_0.COL_TXT
+      )
+      c38,
+      row_number() over(order by tom1_0.CRT_TSP DESC) rn
+    FROM
+      TSO400_ORD_MSTR tom1_0
+    WHERE
+      tom1_0.SON_REF_PATH_NUM<>?
+    AND tom1_0.SON_REF_SEQ_NUM=?
+    AND NOT EXISTS
+      (
+        SELECT
+          tom4_0.SON_REF_ID c0
+        FROM
+          TSO400_ORD_MSTR tom4_0
+        WHERE
+          tom1_0.SON_REF_PATH_NUM NOT IN (?,?)
+        AND tom1_0.LST_PATH_NUM       <>?
+      )
+    AND CAST(CAST(tom1_0.SON_REF_ID
+      ||tom1_0.SON_REF_NUM
+      ||tom1_0.SON_REF_TRN_NUM
+      ||tom1_0.SON_REF_PATH_NUM
+      ||tom1_0.SON_REF_SEQ_NUM AS VARCHAR(32672)) AS VARCHAR(32672)) LIKE ?
+  )
+  r_0_
+WHERE
+  r_0_.rn <=?+?
+AND r_0_.rn>?
+ORDER BY
+  r_0_.rn
+
+
+
+Hi, this is the hibernate query & the output query generated. How to rewrite this code to generate query with pagination logic with the inner query, & remove the outer select query with pagination logic?
